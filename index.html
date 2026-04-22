@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="TDEdit: A Unified Diffusion Framework for Text-Drag Guided Image Manipulation">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TDEdit: A Unified Diffusion Framework for Text-Drag Guided Image Manipulation</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+
+  <!-- Bulma & Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+
+  <style>
+    /* 1. 字体调整：整体变小 */
+    body {
+      font-family: 'Noto Sans', sans-serif;
+      font-size: 1.1rem;
+      color: #2c3e50;
+      background:
+        radial-gradient(circle at top, #eef5ff 0%, #ffffff 28%),
+        linear-gradient(180deg, #fbfcff 0%, #f7f9fc 100%);
+    }
+    
+    /* 2. 宽度调整：变宽 */
+    .container.is-max-desktop {
+      max-width: 1100px; /* 从 960px 增加到 1200px */
+      margin: 0 auto;
+    }
+
+    /* 3. 间隙调整：变小 */
+    .section {
+      padding: 0.30rem 1.5rem; /* 上下间距大幅减小 */
+    }
+    
+    .hero.header-section {
+      background-color: transparent; /* 改为透明 */
+      padding-top: 0.75rem; 
+      padding-bottom: 0; 
+      margin-bottom: 0;
+      box-shadow: none; /* 去掉原本的整栏阴影 */
+    }
+
+    .publication-title {
+      font-family: 'Google Sans', sans-serif;
+      font-weight: 700;
+      font-size: 2.6rem;
+      margin-bottom: 1rem;
+      color: #222;
+      line-height: 1.2;
+    }
+    
+    .publication-authors {
+      font-family: 'Google Sans', sans-serif;
+      font-size: 1.22rem;
+      color: #444;
+      margin-bottom: 15px;
+    }
+    
+    .author-block {
+      display: inline-block;
+      margin-right: 15px;
+    }
+
+    .author-block a {
+        color: #3273dc;
+        text-decoration: none;
+    }
+
+    /* 按钮样式 */
+    .button.is-dark {
+      background-color: #363636;
+      border-color: transparent;
+      color: #fff;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+    .button.is-dark:hover {
+      background-color: #1f3c68;
+      transform: translateY(-1px);
+    }
+    .button.is-rounded {
+      border-radius: 290486px;
+      padding-left: 1.2em;
+      padding-right: 1.2em;
+    }
+    .link-block { margin: 5px; }
+
+    /* 卡片样式优化 */
+    .box-style {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(6px);
+      border-radius: 24px;
+      box-shadow: 0 18px 40px rgba(36, 52, 71, 0.10);
+      padding: 2rem;
+      margin-bottom: 1rem;
+      border: 1px solid #e4eaf2;
+    }
+
+    /* 章节标题 */
+    .title.is-3 {
+      font-family: 'Google Sans', sans-serif;
+      font-weight: 600;
+      font-size: 1.9rem;
+      text-align: center;
+      margin-bottom: 25px; /* 标题下方间距减小 */
+      color: #333;
+    }
+
+    /* 图片样式 */
+    .result-image {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid #e6ebf2;
+      box-shadow: 0 10px 28px rgba(32, 47, 66, 0.08);
+      margin-bottom: 10px;
+    }
+    
+    /* 文本样式 */
+    .content-text {
+      text-align: justify;
+      line-height: 1.7; /* 行高微调 */
+      color: #4a4a4a;
+      font-size: 1.06rem;
+    }
+
+    .caption {
+      font-size: 1rem;
+      color: #5f6b7a;
+      text-align: center;
+      margin-top: 10px;
+      font-style: italic;
+    }
+
+    .section-intro {
+      max-width: 920px;
+      margin: 0 auto 1.1rem auto;
+      text-align: center;
+      color: #556273;
+      font-size: 1.03rem;
+      line-height: 1.75;
+    }
+
+    .mode-strip {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 1rem 0 1.4rem 0;
+    }
+
+    .mode-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0.62rem 0.95rem;
+      border-radius: 999px;
+      background: #f3f7fb;
+      border: 1px solid #d9e4f0;
+      color: #35506f;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .visual-note {
+      max-width: 900px;
+      margin: 0.9rem auto 0 auto;
+      padding: 0.9rem 1rem;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #f6faff 0%, #eef4fb 100%);
+      border: 1px solid #dbe6f2;
+      color: #4d5d70;
+      font-size: 0.98rem;
+      line-height: 1.7;
+      text-align: left;
+    }
+
+    /* BibTeX */
+    pre {
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      overflow-x: auto;
+      font-size: 0.95rem;
+    }
+    
+    .footer {
+        padding: 2rem 1.5rem;
+    }
+      /* ==========================================
+      Text Compare 专用 Grid 样式
+      ========================================== */
+    /* 每一行 */
+    .text-compare-row {
+      display: flex;
+      align-items: center; /* 垂直居中 */
+      justify-content: center;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+
+    /* 第一列：标签 (方法名/Prompt类型) */
+    .text-compare-label {
+      width: 12%; 
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #333;
+      padding-right: 8px;
+    }
+
+    /* 后续列：案例内容 (此处设为2列，每列约42%) */
+    .text-compare-col {
+      width: 22%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px; /* 列与列之间的间隙 */
+    }
+
+    .text-compare-col img {
+      width: 100%;
+      border-radius: 3px;
+      border: 1px solid #f0f0f0;
+    }
+
+    /* Prompt 文字框样式 */
+    .text-prompt-box {
+      background-color: #f7f7f7;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      
+      /* 核心修改：固定高度和宽度充满容器 */
+      width: 100%;
+      height: 90px;  /* 固定高度，确保每个框一样高 */
+      box-sizing: border-box; /* 确保 padding 不会撑大盒子 */
+      
+      /* 文字居中排版 */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      
+      /* 字体样式 */
+      font-size: 0.94rem;
+      line-height: 1.3;
+      padding: 0 10px; /* 防止文字贴边 */
+      overflow: hidden; /* 防止文字过多溢出 */
+    }
+
+      /* ==========================================
+      Drag Ability 专用样式 (适配4列布局)
+      ========================================== */
+    .drag-compare-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+
+    .drag-compare-label {
+      width: 12%; 
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #333;
+      padding-right: 5px;
+    }
+
+    .drag-compare-col {
+      width: 22%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 3px;
+    }
+
+    .drag-compare-col img {
+      width: 100%;
+      border-radius: 3px;
+      border: 1px solid #f0f0f0;
+    }
+
+    .drag-prompt-box {
+      background-color: #f7f7f7;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      width: 100%;
+      height: 60px; /* 固定高度 */
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 0.92rem;
+      line-height: 1.28;
+      padding: 0 5px;
+      overflow: hidden;
+    }
+
+
+
+      /* ==========================================
+       Joint Editing 专用样式 (4列布局)
+       ========================================== */
+    .joint-compare-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+
+    /* 标签列 */
+    .joint-compare-label {
+      width: 12%; 
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #333;
+      padding-right: 5px;
+    }
+
+    /* 内容列 (4列，每列约22%) */
+    .joint-compare-col {
+      width: 22%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 3px;
+    }
+
+    .joint-compare-col img {
+      width: 100%;
+      border-radius: 3px;
+      border: 1px solid #f0f0f0;
+    }
+
+    /* Joint Prompt 框: 固定高度 */
+    .joint-prompt-box {
+      background-color: #f7f7f7;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      width: 100%;
+      height: 60px; /* 固定高度，确保对齐 */
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 0.92rem; 
+      line-height: 1.3;
+      padding: 0 5px;
+      overflow: hidden;
+    }
+
+    .compare-summary {
+      max-width: 930px;
+      margin: 0 auto 1rem auto;
+      color: #56667a;
+      font-size: 1rem;
+      line-height: 1.75;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      .publication-title {
+        font-size: 2.1rem;
+      }
+
+      .box-style {
+        padding: 1.35rem;
+      }
+
+      .section-intro,
+      .compare-summary,
+      .visual-note {
+        font-size: 0.96rem;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+<!-- 1. Header & Teaser (独立卡片) -->
+<section class="hero header-section">
+  <div class="hero-body" style="padding-bottom: 0;">
+    <div class="container is-max-desktop">
+      
+      <!-- Box Start -->
+      <div class="box-style">
+        
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            
+            <h1 class="title is-1 publication-title">TDEdit: A Unified Diffusion Framework for<br>Text-Drag Guided Image Manipulation</h1>
+            
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">Qihang Wang</span>
+              <span class="author-block">Yaxiong Wang<sup>†</sup></span>
+              <span class="author-block">Lecho Cheng</span>
+              <span class="author-block">Zhun Zhong</span>
+            </div>
+
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">School of Computer Science and Information Engineering, Hefei University of Technology, China</span>
+              <br>
+              <span class="author-block" style="font-size: 0.85em; margin-top: 5px; color: #666;"><sup>†</sup>Corresponding Author</span>
+            </div>
+
+            <div class="publication-links">
+              <span class="link-block">
+                <a href="static/pdfs/TDEdit_TOMM.pdf" class="external-link button is-dark is-rounded">
+                  <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                  <span>Paper</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href="#BibTeX" class="external-link button is-dark is-rounded">
+                  <span class="icon"><i class="fas fa-book"></i></span>
+                  <span>BibTeX</span>
+                </a>
+              </span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Teaser Image -->
+        <div class="content has-text-centered" style="margin-top: 25px;">
+          <!-- Modified Image Path -->
+          <img src="static/images/paper_figures/01_teaser.png" class="result-image" style="box-shadow: none; max-width: 100%;" alt="TDEdit teaser">
+          <p class="caption">
+            Latest teaser of TDEdit: joint text-drag editing, drag-only editing, and text-only editing within one unified framework.
+          </p>
+          <div class="mode-strip">
+            <span class="mode-chip"><i class="fas fa-arrows-up-down-left-right"></i> Joint Text-Drag Editing</span>
+            <span class="mode-chip"><i class="fas fa-hand-pointer"></i> Drag-Only Editing</span>
+            <span class="mode-chip"><i class="fas fa-font"></i> Text-Only Support</span>
+          </div>
+          <div class="visual-note">
+            This project page focuses on the two most visually distinctive settings for demonstration: <strong>joint editing</strong>, where geometry and semantics are changed together, and <strong>drag-only editing</strong>, where spatial control is the primary objective. The teaser still shows the full three-mode capability of the framework.
+          </div>
+        </div>
+
+      </div> 
+      <!-- Box End -->
+
+    </div>
+  </div>
+</section>
+
+<!-- 2. Abstract (独立卡片) -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <!-- Box Start -->
+    <div class="box-style">
+      <!-- 删除了 columns 和 column is-four-fifths 的限制，现在是全宽了 -->
+      <h2 class="title is-3">Abstract</h2>
+      <p class="section-intro">
+        TDEdit is designed for practical interactive editing scenarios where users do not want to choose between semantic control and geometric control. Instead of treating text and drag as two separate pipelines, it models them as two synchronized constraints inside one sampling framework.
+      </p>
+      <div class="content content-text">
+        <p>
+          Text-guided image editing and drag-guided image editing provide complementary forms of controllability: text prompts specify high-level semantic changes, while drag interactions impose explicit geometric intent. Unifying both within a single inversion-free diffusion framework remains difficult because denoising must preserve dragged structure while still introducing target semantics.
+        </p>
+        <p>
+          TDEdit retains the inherited three-branch DDCM text-editing path as its semantic backbone and adds two drag-specific components: an <strong>intent-aware hybrid 2D/3D drag module</strong> that identifies the drag subject, resolves the deformation mode, and encodes edited geometry into the drag denoising anchor <code>z̃0</code>; and a <strong>five-branch denoising extension</strong> that synchronizes <code>z0</code> and <code>z̃0</code> through GSAC and RDM, enabling stable text-only, drag-only, and joint text-drag editing in one framework.
+        </p>
+      </div>
+    </div>
+    <!-- Box End -->
+  </div>
+</section>
+
+<!-- 3. Approach (独立卡片) -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="box-style">
+      <h2 class="title is-3">Approach</h2>
+      <p class="section-intro">
+        The core idea is to separate <strong>geometry construction</strong> from <strong>denoising-time semantic editing</strong>. This split keeps layout changes explicit and stable, while still letting the model perform high-quality appearance transformation during sampling.
+      </p>
+      <div class="content has-text-centered">
+        <img src="static/images/paper_figures/08_five_branch_pipeline.png" class="result-image" alt="Five-branch denoising pipeline">
+        
+        <div class="content-text">
+          <p>
+            TDEdit separates editing into two stages. Stage 1 transforms the clean source latent <code>z0</code> into the drag denoising anchor <code>z̃0</code> under user interaction, so geometry is resolved before diffusion starts. Stage 2 then denoises with dual anchors: <code>z0</code> preserves source-side appearance cues, while <code>z̃0</code> preserves the dragged layout.
+          </p>
+          <p>
+            The inherited <code>source / mutual / reference</code> branches stay anchored at <code>z0</code>, while the drag-aware <code>layout / target</code> branches are anchored at <code>z̃0</code>. Within the drag-aware path, Layout Query Mixing (LQM), Reference KV Mixing (RKM), and Reference Denoise Mixing (RDM) keep dragged geometry and target semantics synchronized during sampling.
+          </p>
+          <p>
+            In practice, this means the model does not have to repeatedly rediscover the edited structure from noise. The dragged layout is prepared first, then the denoiser spends its capacity on reconciling target appearance, local detail recovery, and source consistency.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. Method Visualizations -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="box-style">
+      <h2 class="title is-3">Intent-Aware Hybrid Drag Module</h2>
+      <p class="section-intro">
+        The drag module is responsible for interpreting sparse user interaction as an explicit editing instruction. It determines <em>what should move</em>, <em>how it should move</em>, and <em>how the newly exposed background should be repaired</em> before the denoising stage begins.
+      </p>
+      <div class="content has-text-centered">
+        <img src="static/images/paper_figures/02_mask_refinement.png" class="result-image" alt="Intent-aware drag pipeline">
+        <p class="caption">
+          Intent-aware drag pipeline. SAM2 refines user masks into foreground subjects, grouped handle-target pairs estimate subject-wise deformation, and the drag operator maps <code>z0</code> to the drag denoising anchor <code>z̃0</code>.
+        </p>
+
+        <img src="static/images/paper_figures/03_drag_2d_intent.png" class="result-image" style="margin-top: 18px; max-width: 60%; margin-left: auto; margin-right: auto; display: block;" alt="Intent-aware 2D drag dispatch">
+        <p class="caption">
+          Intent-aware 2D dispatch. The solver selects rigid, non-rigid, or hybrid 2D drag, then parses the in-mode intent and converts it into a unified inverse-warp sampling map.
+        </p>
+
+        <img src="static/images/paper_figures/06_drag_3d_modes.png" class="result-image" style="margin-top: 18px;" alt="Depth-aware 3D drag">
+        <p class="caption">
+          Depth-aware 3D drag. The pipeline estimates dense relative depth, lifts the selected foreground into 3D, applies one of the 3D drag modes, and projects the result back to 2D with z-buffering and hole filling.
+        </p>
+        <div class="visual-note">
+          Compared with standard point-drag interfaces, this design makes the user interaction more interpretable. Foreground selection, deformation dispatch, and layout construction are handled explicitly, which reduces ambiguity when the motion is large, non-rigid, or depth-sensitive.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. Joint Editing Results -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="box-style">
+      <h2 class="title is-3">Joint Editing Results</h2>
+      <p class="section-intro">
+        Joint editing is the most demanding setting because each result must satisfy two objectives at once: the object should land at the dragged layout, and the edited content should also match the target prompt. The examples below highlight this dual control behavior under varied appearance changes and motion patterns.
+      </p>
+      <div class="content has-text-centered">
+        <p class="compare-summary">
+          Each column corresponds to one user request. The first two rows describe the semantic change, the third row shows the explicit drag guidance, and the final row presents the TDEdit output. Together, the eight cases illustrate that the framework can preserve spatial intent while still producing noticeable semantic transformation.
+        </p>
+
+        <div class="joint-compare-row">
+          <div class="joint-compare-label">Source<br>Prompt</div>
+          <div class="joint-compare-col"><div class="joint-prompt-box">a slanted mountain bicycle on the road in front of a building</div></div>
+          <div class="joint-compare-col"><div class="joint-prompt-box">a [round] cake with orange frosting on a wooden plate</div></div>
+          <div class="joint-compare-col"><div class="joint-prompt-box">a cup of coffee with drawing of [tulip] putted on the wooden table</div></div>
+          <div class="joint-compare-col"><div class="joint-prompt-box">a [stream] in a lush green forest with rocks</div></div>
+        </div>
+
+        <div class="joint-compare-row">
+          <div class="joint-compare-label">Target<br>Prompt</div>
+          <div class="joint-compare-col">
+            <div class="joint-prompt-box" style="background-color: #eef6fc; border-color: #d0e3f0;">a slanted [rusty] mountain bicycle on the road in front of a building</div>
+          </div>
+          <div class="joint-compare-col">
+            <div class="joint-prompt-box" style="background-color: #eef6fc; border-color: #d0e3f0;">a [square] cake with pink frosting on a wooden plate</div>
+          </div>
+          <div class="joint-compare-col">
+            <div class="joint-prompt-box" style="background-color: #eef6fc; border-color: #d0e3f0;">a cup of coffee with drawing of [lion] putted on the wooden table</div>
+          </div>
+          <div class="joint-compare-col">
+            <div class="joint-prompt-box" style="background-color: #eef6fc; border-color: #d0e3f0;">a [road] in a lush green forest with rocks</div>
+          </div>
+        </div>
+
+        <div class="joint-compare-row">
+          <div class="joint-compare-label">User<br>Edit</div>
+          <div class="joint-compare-col"><img src="static/images/Joint_Results/000000000000.jpg_edit.png" alt="Edit 1"></div>
+          <div class="joint-compare-col"><img src="static/images/Joint_Results/000000000001.jpg_edit.png" alt="Edit 2"></div>
+          <div class="joint-compare-col"><img src="static/images/Joint_Results/000000000006.jpg_edit.png" alt="Edit 3"></div>
+          <div class="joint-compare-col"><img src="static/images/Joint_Results/000000000030.jpg_edit.png" alt="Edit 4"></div>
+        </div>
+
+        <div class="joint-compare-row">
+          <div class="joint-compare-label"><strong>TDEdit<br>(Ours)</strong></div>
+          <div class="joint-compare-col"><img src="static/images/Joint_Results/000000000000.jpg_TDEdit.png" alt="Result 1"></div>
+          <div class="joint-compare-col"><img src="static/images/Joint_Results/000000000001.jpg_TDEdit.png" alt="Result 2"></div>
+          <div class="joint-compare-col"><img src="static/images/Joint_Results/000000000006.jpg_TDEdit.png" alt="Result 3"></div>
+          <div class="joint-compare-col"><img src="static/images/Joint_Results/000000000030.jpg_TDEdit.png" alt="Result 4"></div>
+        </div>
+
+        <div style="border-bottom: 1px dashed #bbb; margin: 30px 0;"></div>
+
+        <div class="joint-compare-row">
+          <div class="joint-compare-label">Source<br>Prompt</div>
+          <div class="joint-compare-col"><div class="joint-prompt-box">a [red] mushroom with white spots on it is sitting on the ground</div></div>
+          <div class="joint-compare-col"><div class="joint-prompt-box">a close up of a [purple] flower on a black background</div></div>
+          <div class="joint-compare-col"><div class="joint-prompt-box">a photo of a dog</div></div>
+          <div class="joint-compare-col"><div class="joint-prompt-box">a photo of a girl</div></div>
+        </div>
+
+        <div class="joint-compare-row">
+          <div class="joint-compare-label">Target<br>Prompt</div>
+          <div class="joint-compare-col">
+            <div class="joint-prompt-box" style="background-color: #eef6fc; border-color: #d0e3f0;">a [brown] mushroom with white spots on it is sitting on the ground</div>
+          </div>
+          <div class="joint-compare-col">
+            <div class="joint-prompt-box" style="background-color: #eef6fc; border-color: #d0e3f0;">a close up of a [white] flower on a black background</div>
+          </div>
+          <div class="joint-compare-col">
+            <div class="joint-prompt-box" style="background-color: #eef6fc; border-color: #d0e3f0;">a photo of a brown wolf</div>
+          </div>
+          <div class="joint-compare-col">
+            <div class="joint-prompt-box" style="background-color: #eef6fc; border-color: #d0e3f0;">a photo of a boy</div>
+          </div>
+        </div>
+
+        <div class="joint-compare-row">
+          <div class="joint-compare-label">User<br>Edit</div>
+          <div class="joint-compare-col"><img src="static/images/Joint_Results/000000000106.jpg_edit.png" alt="Edit 5"></div>
+          <div class="joint-compare-col"><img src="static/images/Joint_Results/000000000125.jpg_edit.png" alt="Edit 6"></div>
+          <div class="joint-compare-col"><img src="static/images/Joint_Results/JH_2023-09-14-1820-16.png_edit.png" alt="Edit 7"></div>
+          <div class="joint-compare-col"><img src="static/images/Joint_Results/SY_2023-09-15-1742-27.png_edit.png" alt="Edit 8"></div>
+        </div>
+
+        <div class="joint-compare-row">
+          <div class="joint-compare-label"><strong>TDEdit<br>(Ours)</strong></div>
+          <div class="joint-compare-col"><img src="static/images/Joint_Results/000000000106.jpg_TDEdit.png" alt="Result 5"></div>
+          <div class="joint-compare-col"><img src="static/images/Joint_Results/000000000125.jpg_TDEdit.png" alt="Result 6"></div>
+          <div class="joint-compare-col"><img src="static/images/Joint_Results/JH_2023-09-14-1820-16.png_TDEdit.png" alt="Result 7"></div>
+          <div class="joint-compare-col"><img src="static/images/Joint_Results/SY_2023-09-15-1742-27.png_TDEdit.png" alt="Result 8"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Drag Ability -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="box-style">
+      <h2 class="title is-3">Drag Ability Comparison</h2>
+      <p class="section-intro">
+        This section isolates the geometric editing capability of TDEdit. Unlike the joint setting, the prompt remains aligned with the source semantics, so the comparison focuses on motion faithfulness, object continuity, and artifact suppression after dragging.
+      </p>
+      <div class="content has-text-centered">
+        <p class="compare-summary">
+          We compare user edits, prior drag baselines, and our results under the same interaction targets. The examples emphasize large displacement, fine structural motion, and background consistency after movement, which are the areas where drag-based editing often becomes unstable.
+        </p>
+
+        <!-- ================= Group 1 ================= -->
+        <div class="drag-compare-row">
+          <div class="drag-compare-label">Source<br>Prompt</div>
+          
+          <div class="drag-compare-col">
+            <div class="drag-prompt-box">a photo of a tiger</div>
+          </div>
+          <div class="drag-compare-col">
+            <div class="drag-prompt-box">a photo of a racoon</div>
+          </div>
+          <div class="drag-compare-col">
+            <div class="drag-prompt-box">a photo of a duck</div>
+          </div>
+          <div class="drag-compare-col">
+            <div class="drag-prompt-box">a photo of a mushroom</div>
+          </div>
+        </div>
+
+        <div class="drag-compare-row">
+          <div class="drag-compare-label">User<br>Edit</div>
+          
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/JH_2023-09-14-1823-02_edit.png" alt="Edit 1"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/JH_2023-09-14-1826-07_edit.png" alt="Edit 2"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/JH_2023-09-14-1828-23_edit.png" alt="Edit 3"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/JH_2023-09-15-1013-35_edit.png" alt="Edit 4"></div>
+        </div>
+
+        <div class="drag-compare-row">
+          <div class="drag-compare-label">Drag<br>Diffusion</div>
+          
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/JH_2023-09-14-1823-02_dragdiffusion.png" alt="DragDiff 1"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/JH_2023-09-14-1826-07_dragdiffusion.png" alt="DragDiff 2"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/JH_2023-09-14-1828-23_dragdiffusion.png" alt="DragDiff 3"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/JH_2023-09-15-1013-35_dragdiffusion.png" alt="DragDiff 4"></div>
+        </div>
+
+        <div class="drag-compare-row">
+          <div class="drag-compare-label">FastDrag</div>
+          
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/JH_2023-09-14-1823-02_fastdrag.png" alt="FastDrag 1"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/JH_2023-09-14-1826-07_fastdrag.png" alt="FastDrag 2"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/JH_2023-09-14-1828-23_fastdrag.png" alt="FastDrag 3"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/JH_2023-09-15-1013-35_fastdrag.png" alt="FastDrag 4"></div>
+        </div>
+
+        <div class="drag-compare-row">
+          <div class="drag-compare-label"><strong>TDEdit<br>(Ours)</strong></div>
+          
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/JH_2023-09-14-1823-02_TDEdit.png" alt="TDEdit 1"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/JH_2023-09-14-1826-07_TDEdit.png" alt="TDEdit 2"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/JH_2023-09-14-1828-23_TDEdit.png" alt="TDEdit 3"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/JH_2023-09-15-1013-35_TDEdit.png" alt="TDEdit 4"></div>
+        </div>
+
+        <div style="border-bottom: 1px dashed #bbb; margin: 30px 0;"></div>
+
+        <!-- ================= Group 2 ================= -->
+        <div class="drag-compare-row">
+          <div class="drag-compare-label">Source<br>Prompt</div>
+          
+          <div class="drag-compare-col">
+            <div class="drag-prompt-box">A cartoon of a girl</div>
+          </div>
+          <div class="drag-compare-col">
+            <div class="drag-prompt-box">Statue of Zeus</div>
+          </div>
+          <div class="drag-compare-col">
+            <div class="drag-prompt-box">the Leaning Tower of Pisa</div>
+          </div>
+          <div class="drag-compare-col">
+            <div class="drag-prompt-box">a man standing on the balcony</div>
+          </div>
+        </div>
+
+        <div class="drag-compare-row">
+          <div class="drag-compare-label">User<br>Edit</div>
+          
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/PJC_2023-09-14-1936-05_edit.png" alt="Edit 5"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/PJC_2023-09-15-1108-11_edit.png" alt="Edit 6"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/YAN_2023-09-16-1432-38_edit.png" alt="Edit 7"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/YAN_2023-09-16-1434-57_edit.png" alt="Edit 8"></div>
+        </div>
+
+        <div class="drag-compare-row">
+          <div class="drag-compare-label">Drag<br>Diffusion</div>
+          
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/PJC_2023-09-14-1936-05_dragdiffusion.png" alt="DragDiff 5"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/PJC_2023-09-15-1108-11_dragdiffusion.png" alt="DragDiff 6"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/YAN_2023-09-16-1432-38_dragdiffusion.png" alt="DragDiff 7"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/YAN_2023-09-16-1434-57_dragdiffusion.png" alt="DragDiff 8"></div>
+        </div>
+
+        <div class="drag-compare-row">
+          <div class="drag-compare-label">FastDrag</div>
+          
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/PJC_2023-09-14-1936-05_fastdrag.png" alt="FastDrag 5"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/PJC_2023-09-15-1108-11_fastdrag.png" alt="FastDrag 6"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/YAN_2023-09-16-1432-38_fastdrag.png" alt="FastDrag 7"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/YAN_2023-09-16-1434-57_fastdrag.png" alt="FastDrag 8"></div>
+        </div>
+
+        <div class="drag-compare-row">
+          <div class="drag-compare-label"><strong>TDEdit<br>(Ours)</strong></div>
+          
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/PJC_2023-09-14-1936-05_TDEdit.png" alt="TDEdit 5"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/PJC_2023-09-15-1108-11_TDEdit.png" alt="TDEdit 6"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/YAN_2023-09-16-1432-38_TDEdit.png" alt="TDEdit 7"></div>
+          <div class="drag-compare-col"><img src="static/images/Drag_Compare/YAN_2023-09-16-1434-57_TDEdit.png" alt="TDEdit 8"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- BibTeX (独立卡片) -->
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop">
+    <div class="box-style">
+      <h2 class="title is-3">BibTeX</h2>
+      <pre><code>@misc{wang2026tdedit,
+  title={TDEdit: A Unified Diffusion Framework for Text-Drag Guided Image Manipulation},
+  author={Wang, Qihang and Wang, Yaxiong and Cheng, Lecho and Zhong, Zhun},
+  year={2026},
+  note={TOMM submission version}
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- Footer (透明背景) -->
+<footer class="footer" style="background-color: transparent;">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p style="font-size: 0.9rem;">
+        Project page template is borrowed from <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>.
+      </p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
